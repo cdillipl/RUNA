@@ -18,7 +18,7 @@ if 'some' in events:
 
 	process.source = cms.Source("PoolSource",
 	    fileNames = cms.untracked.vstring(
-		    'file:///eos/uscms/store/user/morris17/Sig_500SbtoWSt_100RPVSttojb_RUNA_v741p1/RunIISpring15DR74_MiniAOD/150616_165451/0001/Sig_500SbtoWSt_100RPVSttojb_RUNA_v741p1_MiniAOD_Asympt25ns_1000.root',
+		    'file:///eos/uscms/store/user/morris17/RunIISpring15DR74_MiniAOD/150616_165451/0001/Sig_500SbtoWSt_100RPVSttojb_RUNA_v741p1_MiniAOD_Asympt25ns_1000.root',
 	    )
 	)
 

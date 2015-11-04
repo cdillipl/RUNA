@@ -11,7 +11,7 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "DataFormats/PatCandidates/interface/Jet.h"
-#include "Analysis/EDSHyFT/plugins/BTagSFUtil_tprime.h"
+#include "/BTagSFUtil_tprime.h"
 #include "TFile.h"
 #include "TH1D.h"
 #include "TH2D.h"
