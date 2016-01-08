@@ -8,7 +8,8 @@ This package contains scripts:
 * RUNTriggerStudies performs validation and efficiency studies for triggers.
 * RUNtuples creates Ntuples out of MiniAOD files, generated in RUNSimulations.
 * RUAnalysis includes an example of how to use your Ntuples in your Analysis.
-* RUNBTagScaleFactors and RUNMakeEfficiecyMaps contain scripts to calculate btag scale factors. 
+* RUNScripts includes simple useful general scripts.
+* RUNBTagScaleFactorcalculates the scale factors for the btag version of the analysis. 
 
 
 ## Instructions
