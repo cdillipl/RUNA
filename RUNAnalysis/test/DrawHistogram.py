@@ -87,23 +87,6 @@ def plotSignalBkg( signalFiles, bkgFiles, Grom, nameInRoot, name, xmin, xmax, re
 				bkgHistos[ bkgSamples ].SetFillColor( bkgFiles[ bkgSamples ][3] )
 		
 
-	'''
-	for bin in range(0,  hSoSB.GetNbinsX()):
-		hSoSB.SetBinContent(bin, 0.)
-		hSoSB.SetBinError(bin, 0.)
-
-	hSoSB2 = hSoSB.Clone()
-	for ibin in range(0, hSoSB.GetNbinsX()):
-	
-		binContSignal = histos[ 'Signal' ].GetBinContent(ibin)
-		binErrSignal = histos[ 'Signal' ].GetBinError(ibin)
-		binContBkg = histos[ 'QCD' ].GetBinContent(ibin) + histos[ 'TTJets' ].GetBinContent(ibin) + histos[ 'WJets' ].GetBinContent(ibin) + histos[ 'ZJets' ].GetBinContent(ibin)    
-		binErrBkg = histos[ 'QCD' ].GetBinError(ibin)
-		try:
-			value = binContSignal / TMath.Sqrt( binContSignal + binContBkg )
-		except ZeroDivisionError: continue
-		hSoSB.SetBinContent( ibin, value )
-	'''
 	CMS_lumi.extraText = "Preliminary Simulation"
 	hBkg = bkgHistos[ 'QCDPtAll' ].Clone()
 	for samples in bkgHistos:
@@ -152,33 +135,31 @@ def plotSignalBkg( signalFiles, bkgFiles, Grom, nameInRoot, name, xmin, xmax, re
 		pad2.SetGrid()
 		pad2.SetTopMargin(0)
 		pad2.SetBottomMargin(0.3)
-		'''
-		hSoSB.SetFillColor(48)
-		hSoSB.SetFillStyle(1001)
-		hSoSB.GetYaxis().SetTitle("S / #sqrt{S+B}")
-		hSoSB.GetYaxis().SetLabelSize(0.12)
-		hSoSB.GetXaxis().SetLabelSize(0.12)
-		hSoSB.GetYaxis().SetTitleSize(0.12)
-		hSoSB.GetYaxis().SetTitleOffset(0.45)
-		#hSoSB.SetMaximum(0.7)
-		hSoSB.Sumw2()
-		if xmax: hSoSB.GetXaxis().SetRangeUser( xmin, xmax )
-		hSoSB.Draw("hist")
-		'''
+		
 		hSignal = signalHistos[ 'Signal' ].Clone()
-		hSignalBkg = signalHistos[ 'Signal' ].Clone()
-		hSignalBkg.Add( hBkg )
-		hSignal.Divide( hSignalBkg )
+		#hSignalBkg = signalHistos[ 'Signal' ].Clone()
+		#hSignalBkg.Add( hBkg )
+		#hSignal.Divide( hSignalBkg )
+
+		hSignal.Reset()
+		for ibin in range(0, hSignal.GetNbinsX()):
+			binContSignal = signalHistos[ 'Signal' ].GetBinContent(ibin)
+			binContBkg = hBkg.GetBinContent(ibin)
+			try: value = binContSignal / TMath.Sqrt( binContSignal + binContBkg )
+			except ZeroDivisionError: continue
+			hSignal.SetBinContent( ibin, value )
 		
 		labelAxis( name, hSignal, Grom )
 		hSignal.GetYaxis().SetTitleOffset(1.2)
 		hSignal.GetXaxis().SetLabelSize(0.12)
 		hSignal.GetXaxis().SetTitleSize(0.12)
-		hSignal.GetYaxis().SetTitle("S / B")
+		#hSignal.GetYaxis().SetTitle("S / B")
+		hSignal.GetYaxis().SetTitle("S / #sqrt{S+B}")
 		hSignal.GetYaxis().SetLabelSize(0.12)
 		hSignal.GetYaxis().SetTitleSize(0.12)
 		hSignal.GetYaxis().SetTitleOffset(0.45)
-		hSignal.SetMaximum(0.7)
+		hSignal.GetYaxis().CenterTitle()
+		#hSignal.SetMaximum(0.7)
 		if xmax: hSignal.GetXaxis().SetRangeUser( xmin, xmax )
 		hSignal.Draw("hist")
 
@@ -800,14 +781,14 @@ def plotBkgEstimation( allHistosFile, bkgFiles, Grom, nameInRoot, xmin, xmax, re
 	hDataCR.Scale(1/hDataCR.Integral())
 	tmphSR = hSR.Clone()
 	tmphSR.Reset()
-	tmphSR.Divide( hSR, hCR, 1., 1., 'B' )
+	tmphSR.Divide( hSR, hDataCR, 1., 1., 'B' )
 	binWidth = hSR.GetBinWidth(1)
 
 	legend=TLegend(0.70,0.75,0.90,0.87)
 	legend.SetFillStyle(0)
 	legend.SetTextSize(0.04)
 	legend.AddEntry( hSR, 'MC SR' , 'l' )
-	legend.AddEntry( hCR, 'MC CR', 'pl' )
+	#legend.AddEntry( hCR, 'MC CR', 'pl' )
 	legend.AddEntry( hDataCR, 'DATA CR', 'pl' )
 
 	hSR.SetLineColor(kRed-4)
@@ -826,7 +807,7 @@ def plotBkgEstimation( allHistosFile, bkgFiles, Grom, nameInRoot, xmin, xmax, re
 	pad1.cd()
 	#if log: pad1.SetLogy() 	
 	hSR.Draw("hist")
-	hCR.Draw('same')
+	#hCR.Draw('same')
 	hDataCR.Draw('Esame')
 
 	CMS_lumi.extraText = "Preliminary"
@@ -847,7 +828,7 @@ def plotBkgEstimation( allHistosFile, bkgFiles, Grom, nameInRoot, xmin, xmax, re
 	tmphSR.GetXaxis().SetTitleOffset(1.1)
 	tmphSR.GetXaxis().SetLabelSize(0.12)
 	tmphSR.GetXaxis().SetTitleSize(0.12)
-	tmphSR.GetYaxis().SetTitle("MC SR/CR")
+	tmphSR.GetYaxis().SetTitle("(MC SR)/(Data CR)")
 	tmphSR.GetYaxis().SetLabelSize(0.12)
 	tmphSR.GetYaxis().SetTitleSize(0.12)
 	tmphSR.GetYaxis().SetTitleOffset(0.55)

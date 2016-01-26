@@ -143,10 +143,10 @@ def myAnalyzer( dictSamples, listCuts, signalName ):
 				if all(sigCutsList): allHistos[ 'massAve_'+sample ].Fill( massAve, scale )
 
 				for Ind in listOfOptions:
-					allHistos[ listCuts[Ind[0]][0]+'Vs'+listCuts[Ind[1]][0]+'_'+sam ].Fill( getattr( events, listCuts[Ind[0]][0] ), getattr( events, listCuts[Ind[1]][0] ), scale )
+					allHistos[ listCuts[Ind[0]][0]+'Vs'+listCuts[Ind[1]][0]+'_'+sample ].Fill( getattr( events, listCuts[Ind[0]][0] ), getattr( events, listCuts[Ind[1]][0] ), scale )
 					tmpSigCutsList = [ x for i,x in enumerate(sigCutsList) if i not in Ind ]
 					if all(tmpSigCutsList): 
-						allHistos[ listCuts[Ind[0]][0]+'Vs'+listCuts[Ind[1]][0]+'_'+sam+'_Bkg' ].Fill( getattr( events, listCuts[Ind[0]][0] ), getattr( events, listCuts[Ind[1]][0] ), scale )
+						allHistos[ listCuts[Ind[0]][0]+'Vs'+listCuts[Ind[1]][0]+'_'+sample+'_Bkg' ].Fill( getattr( events, listCuts[Ind[0]][0] ), getattr( events, listCuts[Ind[1]][0] ), scale )
 						plotABCD( [ sigCutsList[Ind[0]], sigCutsList[Ind[1]] ], [ listCuts[Ind[0]], listCuts[Ind[1]] ], events, massAve, scale, sample )
 						
 		for IND in listOfOptions:
