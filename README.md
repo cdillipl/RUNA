@@ -1,6 +1,5 @@
 # RU Simulations and Ntuples  
 
-
 This package contains scripts:
 
 * RUNGeneration contains a simple script to set your madgraph environment. 
@@ -11,12 +10,10 @@ This package contains scripts:
 
 ### Instructions
 ```
-cmsrel CMSSW_7_2_0
-cd CMSSW_7_2_0/src/
+cmsrel CMSSW_7_1_20_patch2/
+cd CMSSW_7_1_20_patch2/src/
 cmsenv
-git cms-addpkg RecoJets/JetProducers
-git cms-merge-topic -u alefisico:jetToolbox_72X
-git clone https://github.com/alefisico/RUNA.git
+git clone https://github.com/alefisico/RUNA.git -b v7120patch2
 scram b -j 18
 cmsen
 ```
