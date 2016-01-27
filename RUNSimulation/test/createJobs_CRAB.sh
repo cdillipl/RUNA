@@ -26,10 +26,10 @@ stop2=250	## You can use this parameters later to make everything simpler. Now I
 
 totalNumberEvents=100000
 
-Name=RPVSt${stop1}tobj_13TeV_pythia8
+Name=RPVStopStopToJets_UDD312_M-${stop1}_TuneCUETP8M1_13TeV-madgraph-pythia8       ##### UDD312 is for stop to jj, UDD323 for stop to bj
 LHEFile=/store/user/algomez/lhe/RPVSt100tobj_13TeV.lhe					#### DONT USE the entire eos path!!!!!
 
-PU=( 'PU20bx25' 'PU40bx25' 'PU40bx50' )									#### You can remove the PU scenario that you are not going to use.
+PU=( 'Asympt25ns' )									#### You can remove the PU scenario that you are not going to use.
 CRAB3=true
 
 
