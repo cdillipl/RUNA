@@ -37,8 +37,8 @@ def plotSignalBkg( signalFiles, bkgFiles, Grom, nameInRoot, name, xmin, xmax, re
 	"""docstring for plot"""
 
 	if 'mini' in process: 
-		outputFileName = name+'_'+Grom+'_RPVSt'+jj+mass+'_'+PU+'_PlusBkg_Mini'+version+'AnalysisPlots.'+ext 
-		allHistosFile = TFile.Open('Rootfiles/RUNMiniBoostedAnalysis_RPVSt'+str(mass)+'_allHistos.root')
+		outputFileName = name+'_'+Grom+'_RPVSt'+jj+mass+'_'+PU+'_PlusBkg_Mini'+version+'AnalysisPlots_v0.'+ext 
+		allHistosFile = TFile.Open('Rootfiles/RUNMiniBoostedAnalysis_RPVSt'+str(mass)+'_allHistos_v0.root')
 	#if 'mini' in process: outputFileName = name+'_'+Grom+'_Dibosons_'+PU+'_PlusBkg_Mini'+version+'AnalysisPlots.'+ext 
 	else: outputFileName = name+'_'+Grom+'_RPVSt'+jj+mass+'_'+PU+'_PlusBkg_'+version+'AnalysisPlots.'+ext 
 	print 'Processing.......', outputFileName
@@ -189,6 +189,94 @@ def plotSignalBkg( signalFiles, bkgFiles, Grom, nameInRoot, name, xmin, xmax, re
 		can.SaveAs( 'Plots/'+outputFileName )
 		del can
 
+def plot2DSignalBkg( signalFiles, bkgFiles, Grom, nameInRoot, name, titleXAxis, titleXAxis2, Xmin, Xmax, rebinx, Ymin, Ymax, rebiny, legX, legY, PU, version ):
+	"""docstring for plot"""
+
+	if 'mini' in process: 
+		outputFileName = name+'_RPVSt'+jj+mass+'_'+PU+'_PlusBkg_Mini'+version+'AnalysisPlots_v0.'+ext 
+		allHistosFile = TFile.Open('Rootfiles/RUNMiniBoostedAnalysis_RPVSt'+str(mass)+'_allHistos_v0.root')
+	else: outputFileName = name+'_RPVSt'+jj+mass+'_'+PU+'_PlusBkg_'+version+'AnalysisPlots.'+ext 
+	print 'Processing.......', outputFileName
+
+	signalHistos = {}
+	if len(signalFiles) > 0:
+		for sigSamples in signalFiles:
+			if 'mini' in process: signalHistos[ sigSamples ] = allHistosFile.Get( nameInRoot+'_RPVSt'+str(mass) )
+			else: signalHistos[ sigSamples ] = signalFiles[ sigSamples ][0].Get( nameInRoot )
+			#signalHistos[ sigSamples ] = Rebin2D( signalHistos[ sigSamples ], rebinx, rebiny )
+			if signalFiles[ sigSamples ][1] != 1: signalHistos[ sigSamples ].Scale( signalFiles[ sigSamples ][1] ) 
+
+	bkgHistos = OrderedDict()
+	if len(bkgFiles) > 0:
+		for bkgSamples in bkgFiles:
+			if 'mini' in process: bkgHistos[ bkgSamples ] = allHistosFile.Get( nameInRoot+'_'+bkgSamples )
+			else: bkgHistos[ bkgSamples ] = bkgFiles[ bkgSamples ][0].Get( nameInRoot )
+			bkgHistos[ bkgSamples ] = Rebin2D( bkgHistos[ bkgSamples ], rebinx, rebiny )
+			if bkgFiles[ bkgSamples ][1] != 1: bkgHistos[ bkgSamples ].Scale( bkgFiles[ bkgSamples ][1] ) 
+
+	CMS_lumi.extraText = "Preliminary Simulation"
+	hBkg = bkgHistos[ 'QCDPtAll' ].Clone()
+	for samples in bkgHistos:
+		if 'QCD' not in samples: hBkg.Add( bkgHistos[ samples ].Clone() )
+
+	hBkg.GetXaxis().SetTitle( titleXAxis )
+	hBkg.GetYaxis().SetTitleOffset( 0.9 )
+	hBkg.GetYaxis().SetTitle( titleXAxis2 )
+
+	if (Xmax or Ymax):
+		hBkg.GetXaxis().SetRangeUser( Xmin, Xmax )
+		hBkg.GetYaxis().SetRangeUser( Ymin, Ymax )
+
+	tdrStyle.SetPadRightMargin(0.12)
+	can = TCanvas('c1', 'c1',  750, 500 )
+	can.SetLogz()
+	hBkg.SetMinimum( 0 )
+	hBkg.SetMaximum( 1.1* max( hBkg.GetMaximum(), signalHistos[ 'Signal' ].GetMaximum()  ) )
+	signalHistos[ 'Signal' ].SetMinimum( 0 )
+	signalHistos[ 'Signal' ].SetMaximum( 1.1* max( hBkg.GetMaximum(), signalHistos[ 'Signal' ].GetMaximum()  ) )
+	hBkg.Draw('colz')
+	signalHistos[ 'Signal' ].Draw("cont1z same")
+
+	CMS_lumi.extraText = "Preliminary Simulation"
+	CMS_lumi.relPosX = 0.13
+	CMS_lumi.CMS_lumi(can, 4, 0)
+	if not (legX and legY): labels( name, PU, camp )
+	else: labels( name, PU, camp, legX, legY )
+
+	can.SaveAs( 'Plots/'+outputFileName )
+	#can.SaveAs( 'Plots/'+outputFileName.replace(''+ext, 'gif') )
+	del can
+
+def Rebin2D( h1, rebinx, rebiny ):
+	"""docstring for Rebin2D"""
+
+	tmph1 = h1.Clone()
+	nbinsx = h1.GetXaxis().GetNbins()
+	nbinsy = h1.GetYaxis().GetNbins()
+	xmin  = h1.GetXaxis().GetXmin()
+	xmax  = h1.GetXaxis().GetXmax()
+	ymin  = h1.GetYaxis().GetXmin()
+	ymax  = h1.GetYaxis().GetXmax()
+	nx = nbinsx/rebinx
+	ny = nbinsy/rebiny
+	h1.SetBins( nx, xmin, xmax, ny, ymin, ymax )
+
+	for biny in range( 1, nbinsy):
+		for binx in range(1, nbinsx):
+			ibin1 = h1.GetBin(binx,biny)
+			h1.SetBinContent( ibin1, 0 )
+		
+	for biny in range( 1, nbinsy):
+		by = tmph1.GetYaxis().GetBinCenter( biny )
+		iy = h1.GetYaxis().FindBin(by)
+		for binx in range(1, nbinsx):
+			bx = tmph1.GetXaxis().GetBinCenter(binx)
+			ix  = h1.GetXaxis().FindBin(bx)
+			bin = tmph1.GetBin(binx,biny)
+			ibin= h1.GetBin(ix,iy)
+			cu  = tmph1.GetBinContent(bin)
+			h1.AddBinContent(ibin,cu)
+	return h1
 
 def plot2D( inFiles, sample, Grom, nameInRoot, name, titleXAxis, titleXAxis2, Xmin, Xmax, rebinx, Ymin, Ymax, rebiny, legX, legY, PU, version ):
 	"""docstring for plot"""
@@ -749,7 +837,7 @@ def plotSystematics( inFileSample, Grom, name, xmin, xmax, rebinX, labX, labY, l
 def plotBkgEstimation( allHistosFile, bkgFiles, Grom, nameInRoot, xmin, xmax, rebinX, labX, labY, log, PU, version, Norm=False ):
 	"""docstring for plotBkgEstimation"""
 
-	outputFileName = nameInRoot+'_'+'RPVSt'+str(mass)+'_'+PU+'_bkgShapeEstimation'+version+'Plots.'+ext
+	outputFileName = nameInRoot+'_'+'RPVSt'+str(mass)+'_'+PU+'_bkgShapeEstimation'+version+'Plots_v0.'+ext
 	print 'Processing.......', outputFileName
 
 	SRHistos = OrderedDict()
@@ -781,7 +869,7 @@ def plotBkgEstimation( allHistosFile, bkgFiles, Grom, nameInRoot, xmin, xmax, re
 	hDataCR.Scale(1/hDataCR.Integral())
 	tmphSR = hSR.Clone()
 	tmphSR.Reset()
-	tmphSR.Divide( hSR, hDataCR, 1., 1., 'B' )
+	tmphSR.Divide( hDataCR, hSR, 1., 1., 'B' )
 	binWidth = hSR.GetBinWidth(1)
 
 	legend=TLegend(0.70,0.75,0.90,0.87)
@@ -792,8 +880,10 @@ def plotBkgEstimation( allHistosFile, bkgFiles, Grom, nameInRoot, xmin, xmax, re
 	legend.AddEntry( hDataCR, 'DATA CR', 'pl' )
 
 	hSR.SetLineColor(kRed-4)
+	hSR.SetLineWidth(2)
 	hSR.GetYaxis().SetTitle('Events / '+str(binWidth))
 	hSR.GetXaxis().SetRangeUser( 0, 350 )
+	hSR.SetMaximum( 1.2* max( hSR.GetMaximum(), hDataCR.GetMaximum() ) )
 	hDataCR.SetMarkerStyle(8)
 
 	tdrStyle.SetPadRightMargin(0.05)
@@ -805,8 +895,9 @@ def plotBkgEstimation( allHistosFile, bkgFiles, Grom, nameInRoot, xmin, xmax, re
 	pad2.Draw()
 
 	pad1.cd()
+	pad1.SetGrid()
 	#if log: pad1.SetLogy() 	
-	hSR.Draw("hist")
+	hSR.Draw("histe")
 	#hCR.Draw('same')
 	hDataCR.Draw('Esame')
 
@@ -828,7 +919,7 @@ def plotBkgEstimation( allHistosFile, bkgFiles, Grom, nameInRoot, xmin, xmax, re
 	tmphSR.GetXaxis().SetTitleOffset(1.1)
 	tmphSR.GetXaxis().SetLabelSize(0.12)
 	tmphSR.GetXaxis().SetTitleSize(0.12)
-	tmphSR.GetYaxis().SetTitle("(MC SR)/(Data CR)")
+	tmphSR.GetYaxis().SetTitle("(Data CR)/(MC SR)")
 	tmphSR.GetYaxis().SetLabelSize(0.12)
 	tmphSR.GetYaxis().SetTitleSize(0.12)
 	tmphSR.GetYaxis().SetTitleOffset(0.55)
@@ -886,7 +977,7 @@ if __name__ == '__main__':
 	CMS_lumi.lumi_13TeV = "2.43 fb^{-1}"
 	QCDSF = 0.92
 
-	if process in [ 'mini', 'bkgEst' ]:
+	if process in [ 'mini', 'bkgEst', '2Dmini' ]:
 		signalFiles[ 'Signal' ] = [ TFile.Open('Rootfiles/RUNMiniResolvedAnalysis_RPVStopStopToJets_UDD312_M-'+str(mass)+'-madgraph_RunIISpring15MiniAODv2-74X_Asympt25ns_v09_v03.root'), 1, 'RPV #tilde{t}#rightarrow '+jj+' '+str(mass)+' GeV', kRed-4]
 		bkgFiles[ 'QCDPtAll' ] = [ TFile.Open('Rootfiles/RUNMiniResolvedAnalysis_QCDPtAll_TuneCUETP8M1_13TeV_pythia8_RunIISpring15MiniAODv2-74X_Asympt25ns_v09_v03.root'), QCDSF, 'QCD', kBlue-4 ]
 		bkgFiles[ 'ZJetsToQQ' ] = [ TFile.Open('Rootfiles/RUNMiniResolvedAnalysis_ZJetsToQQ_HT600toInf_13TeV-madgraph_RunIISpring15MiniAODv2-74X_Asympt25ns_v09_v03.root'), 1., 'Z + Jets', kOrange ]
@@ -1059,12 +1150,21 @@ if __name__ == '__main__':
 		[ 'sys', 'Boosted', 'HT', 700, 2000, 5, 0.85, 0.45, False],
 
 		[ 'mini', version, 'massAve', 0, massMaxX, 10, '', '', False],
+		[ '2Dmini', 'Boosted', 'massAsymVsdeltaEtaDijet', 'Mass Asymmetry', '| #eta_{j1} - #eta_{j2} |', 0, 1, 1, 0, 5, 1, jetMassHTlabX, jetMassHTlabY],
+		[ '2Dmini', 'Boosted', 'massAsymVsjet1Tau21', 'Mass Asymmetry', 'Leading jet #tau_{21} |', 0, 1, 1, 0, 1, 1, jetMassHTlabX, jetMassHTlabY],
+		[ '2Dmini', 'Boosted', 'massAsymVsjet2Tau21', 'Mass Asymmetry', '2nd Leading jet #tau_{21} |', 0, 1, 1, 0, 1, 1, jetMassHTlabX, jetMassHTlabY],
+		[ '2Dmini', 'Boosted', 'massAsymVsjet1Tau31', 'Mass Asymmetry', 'Leading jet #tau_{31} |', 0, 1, 1, 0, 1, 1, jetMassHTlabX, jetMassHTlabY],
+		[ '2Dmini', 'Boosted', 'massAsymVsjet2Tau31', 'Mass Asymmetry', '2nd Leading jet #tau_{31} |', 0, 1, 1, 0, 1, 1, jetMassHTlabX, jetMassHTlabY],
+		[ '2Dmini', 'Boosted', 'deltaEtaDijetVsjet1Tau21', '| #eta_{j1} - #eta_{j2} |', 'Leading jet #tau_{21} |', 0, 5, 1, 0, 1, 1, jetMassHTlabX, jetMassHTlabY],
+		[ '2Dmini', 'Boosted', 'deltaEtaDijetVsjet2Tau21', '| #eta_{j1} - #eta_{j2} |', '2nd Leading jet #tau_{21} |', 0, 5, 1, 0, 1, 1, jetMassHTlabX, jetMassHTlabY],
+		[ '2Dmini', 'Boosted', 'deltaEtaDijetVsjet1Tau31', '| #eta_{j1} - #eta_{j2} |', 'Leading jet #tau_{31} |', 0, 5, 1, 0, 1, 1, jetMassHTlabX, jetMassHTlabY],
+		[ '2Dmini', 'Boosted', 'deltaEtaDijetVsjet2Tau31', '| #eta_{j1} - #eta_{j2} |', '2nd Leading jet #tau_{31} |', 0, 5, 1, 0, 1, 1, jetMassHTlabX, jetMassHTlabY],
 		[ 'bkgEst', version, 'massAve', 0, massMaxX, 10, '', '', False],
 
 		]
 
-	if 'all' in single: Plots = [ x[2:] for x in plotList if ( ( x[0] in process ) and ( x[1] in version ) )  ]
-	else: Plots = [ y[2:] for y in plotList if ( ( y[0] in process ) and ( y[1] in version ) and ( y[2] in single ) )  ]
+	if 'all' in single: Plots = [ x[2:] for x in plotList if ( ( process in x[0] ) and ( x[1] in version ) )  ]
+	else: Plots = [ y[2:] for y in plotList if ( ( process in y[0] ) and ( y[1] in version ) and ( y[2] in single ) )  ]
 
 	if 'Resolved' in version: grom =  '' 
 	if 'all' in grom: Grommers = [ '', 'Trimmed', 'Pruned', 'Filtered', "SoftDrop" ]
@@ -1078,15 +1178,12 @@ if __name__ == '__main__':
 
 	for i in Plots:
 		for optGrom in Grommers:
-			if '2D' in process: 
+			if process in '2D': 
 				plot2D( signalFiles, 'RPVStto'+jj, optGrom, version+'AnalysisPlots'+Grom+'/'+[0], i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], PU, version )
 				plot2D( bkgFiles, 'QCD', optGrom, version+'AnalysisPlots'+Grom+'/'+[0], i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], PU, version )
 				#plot2D( inputFileTTJets, 'TTJets', optGrom, i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], PU, version )
 				#plot2D( inputFileWJetsToQQ, 'WJets', optGrom, i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], PU, version )
 				#plot2D( inputFileZJetsToQQ, 'ZJets', optGrom, i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], PU, version )
-			elif '2dmini' in process: 
-				plot2D( signalFiles, 'RPVStto'+jj, optGrom, i[0], i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], PU, version )
-				plot2D( bkgFiles, 'QCD', optGrom, i[0], i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], PU, version )
 
 			elif '1D' in process:
 				for cut1 in listCuts:
@@ -1098,7 +1195,8 @@ if __name__ == '__main__':
 					else: plotQuality( dataFile, bkgFiles, '', version+'AnalysisPlots/'+i[0]+cut1, i[0]+cut1, i[1], i[2], i[3], i[4], i[5], i[6], PU, version )
 			
 			elif 'mini' in process:
-				plotSignalBkg( signalFiles, bkgFiles, optGrom, i[0], i[0], i[1], i[2], i[3], i[4], i[5], i[6], PU, version )
+				if '2D' in process: plot2DSignalBkg( signalFiles, bkgFiles, optGrom, i[0], i[0], i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8], i[9], i[10], PU, version )
+				else: plotSignalBkg( signalFiles, bkgFiles, optGrom, i[0], i[0], i[1], i[2], i[3], i[4], i[5], i[6], PU, version )
 			
 			elif 'Norm' in process:
 				for cut1 in listCuts:
@@ -1119,6 +1217,7 @@ if __name__ == '__main__':
 
 				tmpListCuts = selection[ 'RPVSt'+str(mass) ]
 				listOfOptions = [ [ j,k] for j in range(len(tmpListCuts)-1) for k in range(1, len(tmpListCuts) ) if k > j ]
-				for IND in listOfOptions: 
-					nameVarABCD = i[0]+'_'+tmpListCuts[IND[0]][0]+'Vs'+tmpListCuts[IND[1]][0]
-					plotBkgEstimation( TFile.Open('Rootfiles/RUNMiniBoostedAnalysis_RPVSt'+str(mass)+'_allHistos.root'), bkgFiles, optGrom, nameVarABCD, i[1], i[2], i[3], i[4], i[5], i[6], PU, version )
+				#for IND in listOfOptions: 
+					#nameVarABCD = i[0]+'_'+tmpListCuts[IND[0]][0]+'Vs'+tmpListCuts[IND[1]][0]
+				nameVarABCD = i[0]+'_massAsymVsdeltaEtaDijet'
+				plotBkgEstimation( TFile.Open('Rootfiles/RUNMiniBoostedAnalysis_RPVSt'+str(mass)+'_allHistos_v0.root'), bkgFiles, optGrom, nameVarABCD, i[1], i[2], i[3], i[4], i[5], i[6], PU, version )
