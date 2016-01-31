@@ -30,7 +30,7 @@ if os.access('RooPowerFunction.cxx', os.R_OK): ROOT.gROOT.ProcessLine('.L RooPow
 #line.SetLineColor(kRed)
 
 
-def shapeCards( process, isData, histosFile, signalSample, hist, signalMass, minMass, maxMass, jesValue, jerValue, lumiUnc, outputRootFile ):
+def shapeCards( process, isData, histosFile, signalSample, hist, signalMass, minMass, maxMass, jesValue, jerValue, lumiUnc, outputName ):
 	"""function to run Roofit and save workspace for RooStats"""
 	warnings.filterwarnings( action='ignore', category=RuntimeWarning, message='.*class stack<RooAbsArg\*,deque<RooAbsArg\*> >' )
 	
@@ -167,13 +167,14 @@ def shapeCards( process, isData, histosFile, signalSample, hist, signalMass, min
 		getattr(myWS,'import')(hSigSystDataHist['JERDown'],RooFit.Rename("signal__JERDown"))
         getattr(myWS,'import')(rooDataHist,RooFit.Rename("data_obs"))
         myWS.Print()
+	outputRootFile = currentDir+'/Rootfiles/workspace_'+outputName+'.root'
         myWS.writeToFile(outputRootFile, True)
 	print ' |----> Workspace created in root file:\n', outputRootFile
  # -----------------------------------------
         # write a datacard
 
-        #datacard = open('/afs/cern.ch/work/a/algomez/Substructure/CMSSW_7_1_5/src/MyLimits/datacard_RPVStop'+str(MASS)+'.txt','w')
-        datacard = open( currentDir+'/Datacards/datacard_'+signalSample+'.txt','w')
+	dataCardName = currentDir+'/Datacards/datacard_'+outputName+'.txt'
+        datacard = open( dataCardName ,'w')
         datacard.write('imax 1\n')
         datacard.write('jmax 1\n')
         datacard.write('kmax *\n')
@@ -197,7 +198,7 @@ def shapeCards( process, isData, histosFile, signalSample, hist, signalMass, min
 	if args.normUnc: datacard.write('background_norm  flatParam\n')
         #datacard.write('p1  flatParam\n')
         datacard.close()
-	print ' |----> Datacard created:\n', currentDir+'/Datacards/datacard_'+signalSample+'.txt'
+	print ' |----> Datacard created:\n', dataCardName
 
 
 if __name__ == '__main__':
@@ -227,7 +228,7 @@ if __name__ == '__main__':
 	###### Input parameters
 	masses = {}
 	masses[ 100 ] = 'massAve_massAsymVsdeltaEtaDijet'
-	masses[ 200 ] = 'massAve_massAsymVsdeltaEtaDijet'
+	#masses[ 200 ] = 'massAve_massAsymVsdeltaEtaDijet'
 	jesValue = 0.05
 	jerValue = 0.1
 	lumiUnc = 1.12
@@ -237,13 +238,13 @@ if __name__ == '__main__':
 
 	for mass in masses:
 		signalSample = 'RPVSt'+str(mass)
-		fileHistos = currentDir+'/../../RUNAnalysis/test/Rootfiles/RUNMiniBoostedAnalysis_'+signalSample+'_allHistos_v1.root'
-		#outputRootFile = '/afs/cern.ch/work/a/algomez/Substructure/CMSSW_7_4_5_patch1/src/RUNA/RUNAnalysis/test/Rootfiles/workspace_QCD_RPVSt'+str(MASS)+'tojj_FitP4Gaus_'+PU+'_rooFit_'+lumi+'fb.root'
-		outputRootFile = currentDir+'/Rootfiles/workspace_'+signalSample+'.root'
+		fileHistos = currentDir+'/../../RUNAnalysis/test/Rootfiles/RUNMiniBoostedAnalysis_'+signalSample+'_allHistos_v7.root'
+		if args.unc: outputName = signalSample+'_v7'
+		else: outputName = signalSample+'_NOSys_v7'
 
 		print '#'*50 
 		print ' |----> Creating datacard and workspace for RPV St', str(mass)
 		print '#'*50 
-		p = Process( target=shapeCards, args=( args.process, args.isData, TFile.Open(fileHistos), signalSample, masses[ mass ], mass, minMass, maxMass, jesValue, jerValue, lumiUnc, outputRootFile ) )
+		p = Process( target=shapeCards, args=( args.process, args.isData, TFile.Open(fileHistos), signalSample, masses[ mass ], mass, minMass, maxMass, jesValue, jerValue, lumiUnc, outputName ) )
 		p.start()
 		p.join()

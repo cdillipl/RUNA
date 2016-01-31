@@ -59,7 +59,7 @@ def plotLimits( listMasses  ):
 		xs_theory.append( XS )
 		masses.append( mass )
 		masses_exp.append( mass )
-		tmpFile, tmpTree, tmpEntries = getTree( "higgsCombineTest.Asymptotic.mH"+str(mass)+".root", "limit" )
+		tmpFile, tmpTree, tmpEntries = getTree( "higgsCombineRPVSt.Asymptotic.mH"+str(mass)+".root", "limit" )
 		for i in xrange(tmpEntries):
 			tmpTree.GetEntry(i)
 			tmp = round( tmpTree.quantileExpected, 2)
@@ -134,18 +134,18 @@ def plotLimits( listMasses  ):
 
 	c.SetLogy()
 	#fileName = 'xs_limit_%s_%s.%s'%(args.method,args.final_state + ( ('_' + args.postfix) if args.postfix != '' else '' ), args.fileFormat.lower())
-	fileName = 'xs_limit_RPVStop_UDD312_Boosted.'+ext
+	fileName = 'xs_limit_RPVStop_UDD312_Boosted.'+args.ext
 	c.SaveAs( 'Plots/'+fileName )
 	print 'Processing.......', fileName
 
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-p', '--proc', action='store', default='1D', help='Process to draw, example: 1D, 2D, MC.' )
-	parser.add_argument('-d', '--decay', action='store', default='jj', help='Decay, example: jj, bj.' )
-	parser.add_argument('-v', '--version', action='store', default='Boosted', help='Boosted or non version, example: Boosted' )
-	parser.add_argument('-l', '--lumi', action='store', type=float, default=149.9, help='Luminosity, example: 1.' )
-	parser.add_argument('-e', '--extension', action='store', default='png', help='Extension of plots.' )
+	parser.add_argument('-p', '--proc', dest='process', action='store', default='1D', help='Process to draw, example: 1D, 2D, MC.' )
+	parser.add_argument('-d', '--decay', dest='jj', action='store', default='jj', help='Decay, example: jj, bj.' )
+	parser.add_argument('-v', '--version', dest='version', action='store', default='Boosted', help='Boosted or non version, example: Boosted' )
+	parser.add_argument('-l', '--lumi', dest='lumi', action='store', type=float, default=149.9, help='Luminosity, example: 1.' )
+	parser.add_argument('-e', '--extension', dest='ext', action='store', default='png', help='Extension of plots.' )
 
 	try:
 		args = parser.parse_args()
@@ -153,11 +153,6 @@ if __name__ == '__main__':
 		parser.print_help()
 		sys.exit(0)
 
-	process = args.proc
-	jj = args.decay
-	lumi = args.lumi
-	version = args.version
-	ext = args.extension
 	
 	CMS_lumi.extraText = "Preliminary"
 	lumi = 2431.937

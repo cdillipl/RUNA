@@ -26,7 +26,7 @@ gROOT.SetBatch()
 def myAnalyzer( dictSamples, listCuts, signalName ):
 
 
-	outputFileName = 'Rootfiles/RUNMiniBoostedAnalysis_'+signalName+'_allHistos.root' 
+	outputFileName = 'Rootfiles/RUNMiniBoostedAnalysis_'+signalName+'_allHistos_v2.root' 
 	outputFile = TFile( outputFileName, 'RECREATE' )
 
 	###################################### output Tree
@@ -152,7 +152,7 @@ def myAnalyzer( dictSamples, listCuts, signalName ):
 		for IND in listOfOptions:
 			tmpNameABCD = listCuts[IND[0]][0]+'Vs'+listCuts[IND[1]][0]+'_'+sample
 			allHistos[ 'massAve_'+tmpNameABCD+'_BD' ].Multiply( allHistos[ 'massAve_'+tmpNameABCD+'_D' ] )
-			allHistos[ 'massAve_'+tmpNameABCD+'_BCD' ].Divide( allHistos[ 'massAve_'+tmpNameABCD+'_BD' ], allHistos[ 'massAve_'+tmpNameABCD+'_C' ], scale, 1., '' )
+			allHistos[ 'massAve_'+tmpNameABCD+'_BCD' ].Divide( allHistos[ 'massAve_'+tmpNameABCD+'_BD' ], allHistos[ 'massAve_'+tmpNameABCD+'_C' ], 1., 1., 'B' )
 
 		'''
 		dummy = 1
@@ -182,7 +182,7 @@ def plotABCD( listSel, var, fromTree, massAve, scale, sample ):
 
 	nameABCD = var[0][0]+'Vs'+var[1][0]+'_'+sample
 	if listSel[0] and listSel[1]: 
-		allHistos[ 'massAve_'+nameABCD+'_A' ].Fill( massAve, scale )
+		allHistos[ 'massAve_'+nameABCD+'_A' ].Fill( massAve )
 		allHistos[ nameABCD+'_A' ].Fill( getattr( fromTree, var[0][0] ), getattr( fromTree, var[1][0] ), scale )
 	elif listSel[0] and not listSel[1]: 
 		allHistos[ 'massAve_'+nameABCD+'_B' ].Fill( massAve )

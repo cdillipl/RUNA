@@ -37,8 +37,8 @@ def plotSignalBkg( signalFiles, bkgFiles, Grom, nameInRoot, name, xmin, xmax, re
 	"""docstring for plot"""
 
 	if 'mini' in process: 
-		outputFileName = name+'_'+Grom+'_RPVSt'+jj+mass+'_'+PU+'_PlusBkg_Mini'+version+'AnalysisPlots_v0.'+ext 
-		allHistosFile = TFile.Open('Rootfiles/RUNMiniBoostedAnalysis_RPVSt'+str(mass)+'_allHistos_v0.root')
+		outputFileName = name+'_'+Grom+'_RPVSt'+jj+mass+'_'+PU+'_PlusBkg_Mini'+version+'AnalysisPlots.'+ext 
+		allHistosFile = TFile.Open('Rootfiles/RUNMiniBoostedAnalysis_RPVSt'+str(mass)+'_allHistos.root')
 	#if 'mini' in process: outputFileName = name+'_'+Grom+'_Dibosons_'+PU+'_PlusBkg_Mini'+version+'AnalysisPlots.'+ext 
 	else: outputFileName = name+'_'+Grom+'_RPVSt'+jj+mass+'_'+PU+'_PlusBkg_'+version+'AnalysisPlots.'+ext 
 	print 'Processing.......', outputFileName
@@ -837,7 +837,7 @@ def plotSystematics( inFileSample, Grom, name, xmin, xmax, rebinX, labX, labY, l
 def plotBkgEstimation( allHistosFile, bkgFiles, Grom, nameInRoot, xmin, xmax, rebinX, labX, labY, log, PU, version, Norm=False ):
 	"""docstring for plotBkgEstimation"""
 
-	outputFileName = nameInRoot+'_'+'RPVSt'+str(mass)+'_'+PU+'_bkgShapeEstimation'+version+'Plots_v0.'+ext
+	outputFileName = nameInRoot+'_'+'RPVSt'+str(mass)+'_'+PU+'_bkgShapeEstimation'+version+'Plots_v1.'+ext
 	print 'Processing.......', outputFileName
 
 	SRHistos = OrderedDict()
@@ -1220,4 +1220,4 @@ if __name__ == '__main__':
 				#for IND in listOfOptions: 
 					#nameVarABCD = i[0]+'_'+tmpListCuts[IND[0]][0]+'Vs'+tmpListCuts[IND[1]][0]
 				nameVarABCD = i[0]+'_massAsymVsdeltaEtaDijet'
-				plotBkgEstimation( TFile.Open('Rootfiles/RUNMiniBoostedAnalysis_RPVSt'+str(mass)+'_allHistos_v0.root'), bkgFiles, optGrom, nameVarABCD, i[1], i[2], i[3], i[4], i[5], i[6], PU, version )
+				plotBkgEstimation( TFile.Open('Rootfiles/RUNMiniBoostedAnalysis_RPVSt'+str(mass)+'_allHistos_v1.root'), bkgFiles, optGrom, nameVarABCD, i[1], i[2], i[3], i[4], i[5], i[6], PU, version )
