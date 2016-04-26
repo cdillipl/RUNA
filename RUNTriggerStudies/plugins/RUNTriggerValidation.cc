@@ -32,6 +32,7 @@ class RUNTriggerValidation : public edm::EDAnalyzer {
 
 	public:
 		explicit RUNTriggerValidation(const edm::ParameterSet&);
+      		static void fillDescriptions(edm::ConfigurationDescriptions & descriptions);
 		~RUNTriggerValidation() {}
 
 	private:
@@ -149,6 +150,19 @@ void RUNTriggerValidation::beginJob() {
 	histos2D_[ "hltTrimmedMassvsHT" ] = fs_->make< TH2D >( "hltTrimmedMassvsHT", "hltTrimmedMassvsHT", 100, 0., 1000., 100, 0., 2000. );
 	histos2D_[ "hltTrimmedMassvsHT" ]->Sumw2();
 }
+
+void RUNTriggerValidation::fillDescriptions(edm::ConfigurationDescriptions & descriptions) {
+
+	edm::ParameterSetDescription desc;
+	desc.add<InputTag>("bits", 	InputTag("TriggerResults", "", "HLT"));
+	desc.add<InputTag>("prescales", 	InputTag("patTrigger"));
+	desc.add<InputTag>("objects", 	InputTag("selectedPatTrigger"));
+	desc.add<InputTag>("hltPath", 	InputTag("HLT_PFHT800"));
+	desc.add<InputTag>("hltTrigger", 	InputTag("hltTriggerSummaryAOD","","HLT"));
+	desc.add<InputTag>("recoJets", 	InputTag("slimmedJetsAK8"));
+	descriptions.addDefault(desc);
+}
+      
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(RUNTriggerValidation);

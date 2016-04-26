@@ -14,15 +14,21 @@ This package contains scripts:
 
 ## Instructions
 ```
-cmsrel CMSSW_7_4_14
-cd CMSSW_7_4_14/src/
+cmsrel CMSSW_7_6_3_patch2
+cd CMSSW_7_6_3_patch2/src/
 cmsenv 
-git cms-addpkg CommonTools/PileupAlgos
-git cms-merge-topic ikrav:egm_id_7.4.12_v1
-git cms-merge-topic alefisico:myCMSSW_7_4_14
-git clone https://github.com/cmsb2g/B2GAnaFW.git Analysis/B2GAnaFW -b v7.4.x_v7.1_25ns
-git clone https://github.com/cms-jet/JetToolbox JMEAnalysis/JetToolbox 
-git clone git@github.com:alefisico/RUNA.git 
+git cms-init
+```
+Temporary fix (only for 763 releases):
+```
+git remote add btv-cmssw https://github.com/cms-btv-pog/cmssw.git
+git fetch --tags btv-cmssw
+git cms-merge-topic cms-btv-pog:fixTMVAEvaluatorMemoryProblem-from-CMSSW_7_6_3 
+```
+```
+git clone git@github.com:cmsb2g/B2GAnaFW.git Analysis/B2GAnaFW -b v7.6.x_v1.2
+git clone git@github.com:cms-jet/JetToolbox.git JMEAnalysis/JetToolbox -b jetToolbox_763
+git clone git@github.com:alefisico/RUNA.git -b v763
 scram b -j 18
 cmsenv
 ```
@@ -32,7 +38,7 @@ cmsenv
 * RUNGeneration does not need to be inside CMSSW.
 * To run madgraph in the RU hexfarm, just download the script inside RUNGeneration and follow the instructions in the README file.
 * RUNSimulations creates samples according to RunIISpring15DR74 campaing.
-* RUNtuples is a modified version of the [B2GNtuple](https://github.com/cmsb2g/B2GAnaFW/tree/master), using the 74X version of the jetToolbox.
+* RUNtuples is a modified version of the [B2GNtuple](https://github.com/cmsb2g/B2GAnaFW/tree/master), using the 763 version of the jetToolbox.
 * RUNAnalysis uses the ntuples created with this version of the RUNtuples. 
 
 > Disclaimer
