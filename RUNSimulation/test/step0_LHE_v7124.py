@@ -61,7 +61,7 @@ process.externalLHEProducer = cms.EDProducer("ExternalLHEProducer",
     scriptName = cms.FileInPath('GeneratorInterface/LHEInterface/data/run_generic_tarball_cvmfs.sh'),
     numberOfParameters = cms.uint32(1),
     #args = cms.vstring('/cvmfs/cms.cern.ch/phys_generator/gridpacks/slc6_amd64_gcc481/13TeV/madgraph/V5_2.2.2/exo_RPVStopToJets/v1/HadRPVStop80_UDD312_13TeV_tarball.tar.xz')
-    args = cms.vstring('/afs/cern.ch/user/a/algomez/public/forDavid/HadRPVStop100_UDD323_13TeV_tarball.tar.xz')
+    args = cms.vstring('/afs/cern.ch/user/a/algomez/public/forDavid/HadRPVStop100_UDD312_13TeV_tarball.tar.xz')
 )
 
 
