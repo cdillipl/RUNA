@@ -75,7 +75,7 @@ class RUNAnalysis : public EDAnalyzer {
       //virtual void endLuminosityBlock(LuminosityBlock const&, EventSetup const&) override;
 
       // ----------member data ---------------------------
-      //PUReweighter PUWeight_;
+      PUReweighter PUWeight_;
       int lhaPdfId;
 
       Service<TFileService> fs_;
@@ -115,7 +115,7 @@ class RUNAnalysis : public EDAnalyzer {
       float HT = 0, mass1 = -999, mass2 = -999, avgMass = -999, MET = -999,
 	    delta1 = -999, delta2 = -999, massAsym = -999, eta1 = -999, eta2 = -999, deltaEta = -999, 
 	    deltaR = -999, cosThetaStar1 = -999, cosThetaStar2 = -999,
-	    puWeight = -999, genWeight = -999, lumiWeight = -999 ;
+	    puWeight = -999, genWeight = -999, lumiWeight = -999, pdfWeight = -999 ;
       vector<float> scaleWeights, pdfWeights, alphaWeights;
 
       EDGetTokenT<vector<float>> jetPt_;
@@ -127,6 +127,10 @@ class RUNAnalysis : public EDAnalyzer {
       EDGetTokenT<vector<float>> jetCSVv2_;
       EDGetTokenT<vector<float>> jetCMVAv2_;
       EDGetTokenT<vector<float>> jetArea_;
+      EDGetTokenT<vector<float>> jetGenPt_;
+      EDGetTokenT<vector<float>> jetGenEta_;
+      EDGetTokenT<vector<float>> jetGenPhi_;
+      EDGetTokenT<vector<float>> jetGenE_;
       EDGetTokenT<int> NPV_;
       EDGetTokenT<vector<float>> metPt_;
       EDGetTokenT<int> trueNInt_;
@@ -176,6 +180,10 @@ RUNAnalysis::RUNAnalysis(const ParameterSet& iConfig):
 	jetCSVv2_(consumes<vector<float>>(iConfig.getParameter<InputTag>("jetCSVv2"))),
 	jetCMVAv2_(consumes<vector<float>>(iConfig.getParameter<InputTag>("jetCMVAv2"))),
 	jetArea_(consumes<vector<float>>(iConfig.getParameter<InputTag>("jetArea"))),
+	jetGenPt_(consumes<vector<float>>(iConfig.getParameter<InputTag>("jetGenPt"))),
+	jetGenEta_(consumes<vector<float>>(iConfig.getParameter<InputTag>("jetGenEta"))),
+	jetGenPhi_(consumes<vector<float>>(iConfig.getParameter<InputTag>("jetGenPhi"))),
+	jetGenE_(consumes<vector<float>>(iConfig.getParameter<InputTag>("jetGenE"))),
 	NPV_(consumes<int>(iConfig.getParameter<InputTag>("NPV"))),
 	metPt_(consumes<vector<float>>(iConfig.getParameter<InputTag>("metPt"))),
 	trueNInt_(consumes<int>(iConfig.getParameter<InputTag>("trueNInt"))),
@@ -288,6 +296,18 @@ void RUNAnalysis::analyze(const Event& iEvent, const EventSetup& iSetup) {
 	Handle<vector<float> > jetArea;
 	iEvent.getByToken(jetArea_, jetArea);
 
+	Handle<vector<float> > jetGenPt;
+	iEvent.getByToken(jetGenPt_, jetGenPt);
+
+	Handle<vector<float> > jetGenEta;
+	iEvent.getByToken(jetGenEta_, jetGenEta);
+
+	Handle<vector<float> > jetGenPhi;
+	iEvent.getByToken(jetGenPhi_, jetGenPhi);
+
+	Handle<vector<float> > jetGenE;
+	iEvent.getByToken(jetGenE_, jetGenE);
+
 	Handle<int> NPV;
 	iEvent.getByToken(NPV_, NPV);
 
@@ -363,15 +383,23 @@ void RUNAnalysis::analyze(const Event& iEvent, const EventSetup& iSetup) {
 		Handle<LHEEventProduct> lheEvtInfo;
 		iEvent.getByToken( extLHEProducer_, lheEvtInfo );
 		// This function will return all the weights from the lheEvtInfo (scaleWeights, pdfWeights, alphaWeights)
-		//getWeights( lheEvtInfo, lhaPdfId, scaleWeights, pdfWeights, alphaWeights );
+		getWeights( lheEvtInfo, lhaPdfId, scaleWeights, pdfWeights, alphaWeights );
+
+		//// Calculating the RMS from the pdfWeights, per event
+		double sum = accumulate(pdfWeights.begin(), pdfWeights.end(), 0.0);
+		double mean = sum / pdfWeights.size();
+		vector<double> diff(pdfWeights.size());
+		transform(pdfWeights.begin(), pdfWeights.end(), diff.begin(), [mean](double x) { return x - mean; });
+		double sq_sum = inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+		pdfWeight = sqrt(sq_sum / pdfWeights.size());
 		////////////////////////////////////////////////////
 	}
 
 	bool ORTriggers = checkORListOfTriggerBits( triggerName, triggerBit, triggerPass );
 	// PU Reweight
-	//if ( isData ) puWeight = 1;
-	//else puWeight = PUWeight_.getPUWeight( *trueNInt, *bunchCross );
-	puWeight = 1;
+	if ( isData ) puWeight = 1;
+	else puWeight = PUWeight_.getPUWeight( *trueNInt, *bunchCross );
+	//puWeight = 1;
 	histos1D_[ "PUWeight" ]->Fill( puWeight );
 	lumiWeight = scale;
 	double totalWeight = puWeight * lumiWeight;
@@ -401,6 +429,7 @@ void RUNAnalysis::analyze(const Event& iEvent, const EventSetup& iSetup) {
 
 		double JEC = corrections( rawJet, (*jetArea)[i], (*rho)[i] ,*NPV, jetJEC); 
 		double sysJEC = 0;
+		double sysJER = 1;
 		if ( !isData ) {
 			if ( systematics.Contains("JESUp") ){
 				double JESUp = uncertainty( rawJet, jetCorrUnc, true );
@@ -409,8 +438,21 @@ void RUNAnalysis::analyze(const Event& iEvent, const EventSetup& iSetup) {
 				double JESDown = uncertainty( rawJet, jetCorrUnc, false );
 				sysJEC = ( - JESDown );
 			}
+
+			// Based on this: https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideCMSDataAnalysisSchool2015KoreaJetExercise#Resolution
+			if ( systematics.Contains("JERUp") ){
+				double JERUp = getJER( (*jetEta)[i], 1 );
+				double corrJetPt = (*jetPt)[i] * JEC;
+				double deltaPtUp = ( corrJetPt - (*jetGenPt)[i] ) * (JERUp-1.0);
+				sysJER = max( 0.0, ( corrJetPt + deltaPtUp ) / corrJetPt );
+			} else if  ( systematics.Contains("JERDown") ){
+				double JERDown = getJER( (*jetEta)[i], -1 );
+				double corrJetPt = (*jetPt)[i] * JEC;
+				double deltaPtDown = ( corrJetPt - (*jetGenPt)[i] ) * (JERDown-1.0);
+				sysJER = max( 0.0, ( corrJetPt + deltaPtDown ) / corrJetPt );
+			}
 		} 
-		corrJet = rawJet* ( JEC + sysJEC  );
+		corrJet = rawJet* ( ( JEC * sysJER ) + sysJEC  );
 
 		if( corrJet.Pt() > 80 && idL ) { 
 
@@ -710,7 +752,7 @@ void RUNAnalysis::analyze(const Event& iEvent, const EventSetup& iSetup) {
 void RUNAnalysis::beginJob() {
 
 	// Calculate PUWeight
-	//if ( !isData ) PUWeight_.generateWeights( dataPUFile );
+	if ( !isData ) PUWeight_.generateWeights( dataPUFile );
 
 	RUNAtree = fs_->make< TTree >("RUNATree", "RUNATree"); 
 	RUNAtree->Branch( "run", &run, "run/I" );
@@ -720,6 +762,7 @@ void RUNAnalysis::beginJob() {
 	RUNAtree->Branch( "numPV", &numPV, "numPV/I" );
 	RUNAtree->Branch( "puWeight", &puWeight, "puWeight/F" );
 	RUNAtree->Branch( "lumiWeight", &lumiWeight, "lumiWeight/F" );
+	RUNAtree->Branch( "pdfWeight", &pdfWeight, "pdfWeight/F" );
 	RUNAtree->Branch( "genWeight", &genWeight, "genWeight/F" );
 	RUNAtree->Branch( "HT", &HT, "HT/F" );
 	RUNAtree->Branch( "mass1", &mass1, "mass1/F" );
@@ -739,9 +782,9 @@ void RUNAnalysis::beginJob() {
 	RUNAtree->Branch( "jetsPhi", "vector<float>", &jetsPhi);
 	RUNAtree->Branch( "jetsE", "vector<float>", &jetsE);
 	RUNAtree->Branch( "jetsQGL", "vector<float>", &jetsQGL);
-	RUNAtree->Branch( "scaleWeights", &scaleWeights );
-	RUNAtree->Branch( "pdfWeights", &pdfWeights );
-	RUNAtree->Branch( "alphaWeights", &alphaWeights );
+	//RUNAtree->Branch( "scaleWeights", &scaleWeights );
+	//RUNAtree->Branch( "pdfWeights", &pdfWeights );
+	//RUNAtree->Branch( "alphaWeights", &alphaWeights );
 
 	histos1D_[ "rawJetPt" ] = fs_->make< TH1D >( "rawJetPt", "rawJetPt", 100, 0., 1000. );
 	histos1D_[ "rawJetPt" ]->Sumw2();
@@ -1011,6 +1054,10 @@ void RUNAnalysis::fillDescriptions(edm::ConfigurationDescriptions & descriptions
 	desc.add<InputTag>("jetCSVv2", 	InputTag("jetsAK4CHS:jetAK4CHSCSVv2"));
 	desc.add<InputTag>("jetCMVAv2", 	InputTag("jetsAK4CHS:jetAK4CHSCMVAv2"));
 	desc.add<InputTag>("jetArea", 	InputTag("jetsAK4CHS:jetAK4CHSjetArea"));
+	desc.add<InputTag>("jetGenPt", 	InputTag("jetsAK4CHS:jetAK4CHSGenJetPt"));
+	desc.add<InputTag>("jetGenEta", 	InputTag("jetsAK4CHS:jetAK4CHSGenJetEta"));
+	desc.add<InputTag>("jetGenPhi", 	InputTag("jetsAK4CHS:jetAK4CHSGenJetPhi"));
+	desc.add<InputTag>("jetGenE", 	InputTag("jetsAK8CHS:jetAK8CHSGenJetE"));
 	desc.add<InputTag>("NPV", 	InputTag("eventUserData:npv"));
 	desc.add<InputTag>("metPt", 	InputTag("metFull:metFullPt"));
 	// JetID
